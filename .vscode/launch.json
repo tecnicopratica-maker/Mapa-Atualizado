@@ -1,0 +1,16 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Open mapa.html",
+            "file": "c:\\Users\\alexsandro.cruz\\OneDrive - PRATICA PRODUTOS S.A\\Área de Trabalho\\Mapa Técnicos - Próprios\\mapa.html"
+        }
+    ]
+}
