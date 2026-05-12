@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapa Prática Service+ – Técnicos Próprios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
+    header {
+      background: #0b4c8c;
+      color: #fff;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header img { 
+      height: 60px;
+      width: auto;
+      max-width: 100%;
+    }
+    #map { height: calc(100vh - 74px); }
+    
+    /* Ícone arredondado */
+    .marcador-redondo {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid white;
+      background: white;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.23);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .marcador-redondo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    .marcador-cartao {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #cbe6ff 0%, #8fcfff 100%);
+      border: 3px solid white;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.23);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b4c8c;
+      font-size: 18px;
+      font-weight: 700;
+      position: relative;
+    }
+
+    .marcador-cartao .card-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: white;
+      color: #0b4c8c;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .marcador-cartao .card-label {
+      position: absolute;
+      top: 52px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 80px;
+      max-width: 120px;
+      padding: 2px 6px;
+      background: rgba(255,255,255,0.95);
+      color: #0b4c8c;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 6px;
+      border: 1px solid rgba(11,76,140,0.16);
+      line-height: 1.2;
+      white-space: normal;
+      word-break: break-word;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      z-index: 2;
+    }
+
+    /* Popup com dados */
+    .popup-dados-tecnico {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      font-size: 12px;
+      color: #333;
+    }
+
+    .popup-dados-tecnico div {
+      margin: 6px 0;
+      line-height: 1.4;
+    }
+
+    .popup-dados-tecnico strong {
+      color: #0b4c8c;
+      font-weight: bold;
+    }
+
+    .popup-dados-tecnico .titulo {
+      font-size: 13px;
+      font-weight: bold;
+      color: #0b4c8c;
+      border-bottom: 2px solid #0b4c8c;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    .leaflet-popup-content {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .leaflet-popup-tip {
+      background: white;
+    }
+
+    .label {
+      background: rgba(255,255,255,0.95);
+      border-radius: 6px;
+      padding: 5px 10px;
+      color: #0b4c8c;
+      font-weight: bold;
+      font-size: 15px;
+      border: 1px solid #0b4c8c;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      white-space: nowrap;
+    }
+
+    header {
+      background: #0b4c8c;
+      color: #fff;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 220px;
+    }
+
+    .header-left h1 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.1;
+    }
+
+    .search-container {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      width: auto;
+      flex: none;
+      margin-left: auto;
+      min-width: 160px;
+      max-width: 420px;
+    }
+
+    .search-container label {
+      margin: 0;
+      white-space: nowrap;
+      font-size: 0.95rem;
+    }
+
+    .search-input-group {
+      display: flex;
+      gap: 8px;
+      width: auto;
+      align-items: center;
+    }
+
+    .search-input-group input,
+    .search-input-group button {
+      min-height: 34px;
+    }
+
+    .search-input-group input {
+      min-width: 120px;
+      max-width: 180px;
+      padding: 6px 10px;
+      flex: none;
+    }
+
+    .search-input-group button {
+      white-space: nowrap;
+    }
+
+    .search-container label {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .search-input-group {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .search-input-group input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      min-width: 0;
+    }
+
+    .search-input-group button {
+      padding: 10px 16px;
+      background: #ffcc00;
+      color: #0b4c8c;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .clear-button {
+      padding: 10px 16px;
+      background: white;
+      color: #0b4c8c;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .search-input-group button:hover,
+    .clear-button:hover {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .search-result {
+      display: none;
+      margin: 12px 16px 0;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, #f6fbff 0%, #ffffff 100%);
+      border: 1px solid rgba(11, 76, 140, 0.16);
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(11, 76, 140, 0.08);
+      color: #0b4c8c;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      max-width: calc(100% - 32px);
+      position: relative;
+      z-index: 10;
+    }
+
+    .search-result.active {
+      display: block;
+    }
+
+    .search-result .result-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-result .result-header .icon {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #0b4c8c;
+      color: white;
+      font-size: 16px;
+      box-shadow: 0 4px 10px rgba(11, 76, 140, 0.22);
+      flex-shrink: 0;
+    }
+
+    .search-result .result-header strong {
+      display: block;
+      font-size: 1rem;
+      color: #0b4c8c;
+      font-weight: 700;
+    }
+
+    .search-result .result-header span {
+      font-size: 0.92rem;
+      color: #27496d;
+    }
+
+    .search-result .technician-line {
+      display: grid;
+      gap: 6px;
+      padding: 12px 12px 0;
+      border-top: 1px solid rgba(11, 76, 140, 0.12);
+      margin-top: 10px;
+    }
+
+    .search-result .technician-line .tech-title {
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #0b4c8c;
+      font-weight: 700;
+    }
+
+    .search-result .technician-line .tech-name {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #122a4a;
+      margin-bottom: 2px;
+    }
+
+    .search-result .technician-line .tech-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: #375a7f;
+      font-size: 0.92rem;
+    }
+
+    .search-result .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(11, 76, 140, 0.1);
+      color: #0b4c8c;
+      border: 1px solid rgba(11, 76, 140, 0.18);
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.5);
+      border-top-color: #ff4f4f;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .spinner-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .spinner-overlay.active {
+      display: flex;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .search-highlight-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ff4f4f;
+      border: 3px solid #fff;
+      box-shadow: 0 0 16px rgba(255, 79, 79, 0.95);
+    }
+
+    .nearest-tech-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ff4f4f;
+      border: 3px solid #fff;
+      box-shadow: 0 0 14px rgba(255, 79, 79, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <img src="./logo.jpg" alt="Logo Prática Service+">
+      <h1>Mapa Prática Service+ – Técnicos Próprios</h1>
+    </div>
+    <div class="search-container">
+      <label for="cepSearch">Buscar por CEP</label>
+      <div class="search-input-group">
+        <input id="cepSearch" type="text" placeholder="Digite o CEP (ex: 01234567)" maxlength="9">
+        <button id="searchCepButton" type="button">Buscar</button>
+        <button id="clearCepButton" type="button" class="clear-button">Limpar</button>
+      </div>
+    </div>
+  </header>
+  <div id="searchResult" class="search-result" aria-live="polite"></div>
+  <div id="map"></div>
+  <div class="spinner-overlay" id="globalSpinner" aria-hidden="true"><div class="spinner"></div></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const initialMapCenter = [-14.2350, -51.9253];
+    const initialMapZoom = 4;
+    const map = L.map('map').setView(initialMapCenter, initialMapZoom);
+    let mapReady = false;
+    map.whenReady(() => {
+      mapReady = true;
+      map.invalidateSize(false);
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const markers = [];
+
+    async function buscarDadosCepBrasilApi(cep) {
+      try {
+        const response = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`);
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        if (data.message || data.errors) return null;
+
+        return {
+          logradouro: data.street || '',
+          bairro: data.neighborhood || '',
+          localidade: data.city || '',
+          uf: data.state || '',
+          cep: data.cep || cep
+        };
+      } catch (error) {
+        return null;
+      }
+    }
+
+    async function buscarDadosCepViaCep(cep) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        if (data.erro || !data.localidade) return null;
+
+        return {
+          logradouro: data.logradouro || '',
+          bairro: data.bairro || '',
+          localidade: data.localidade || '',
+          uf: data.uf || '',
+          cep: cep
+        };
+      } catch (error) {
+        console.error('Erro ao buscar CEP no ViaCEP:', error);
+        return null;
+      }
+    }
+
+    async function buscarDadosCepNominatim(cep) {
+      try {
+        const termo = encodeURIComponent(`${cep}, Brasil`);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${termo}`;
+        const response = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+        if (!response.ok) return null;
+
+        const results = await response.json();
+        if (!results || !results.length) return null;
+
+        const address = results[0].address || {};
+        const cidade = address.city || address.town || address.village || address.county || '';
+        const uf = address.state || '';
+        const logradouro = [address.road, address.pedestrian, address.cycleway, address.footway, address.house_number]
+          .filter(Boolean)
+          .join(' ');
+        const bairro = address.neighbourhood || address.suburb || '';
+
+        if (!cidade && !uf) return null;
+
+        return {
+          logradouro: logradouro || '',
+          bairro: bairro,
+          localidade: cidade,
+          uf: uf,
+          cep: cep
+        };
+      } catch (error) {
+        return null;
+      }
+    }
+
+    async function buscarDadosCep(cep) {
+      const cepLimpo = limparCep(cep);
+      if (cepLimpo.length !== 8) return null;
+
+      return await buscarDadosCepViaCep(cepLimpo);
+    }
+
+    async function obterCoordenadasCep(cep, dadosCep = null) {
+      const buscarNominatim = async (query) => {
+        try {
+          const termo = encodeURIComponent(query);
+          const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${termo}`;
+          const response = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+          if (!response.ok) return null;
+          const results = await response.json();
+          if (!results || !results.length) return null;
+
+          const lat = parseFloat(results[0].lat);
+          const lon = parseFloat(results[0].lon);
+          if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
+
+          return [lat, lon];
+        } catch (e) {
+          console.error('Erro Nominatim:', e);
+          return null;
+        }
+      };
+
+      const cepLimpo = limparCep(cep);
+      if (cepLimpo.length !== 8) return null;
+
+      if (dadosCep && dadosCep.localidade && dadosCep.uf) {
+        const query = `${dadosCep.localidade}, ${dadosCep.uf}, Brasil`;
+        console.log('Buscando coordenadas:', query);
+        const coords = await buscarNominatim(query);
+        if (coords) return coords;
+      }
+
+      return null;
+    }
+
+    function formatarCep(cep) {
+      const cepLimpo = limparCep(cep);
+      return cepLimpo.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+    }
+
+    // Mapeamento de nomes dos técnicos para nomes das imagens
+    const imagemMap = {
+      "Leonardo Guimaraes Oliveira": "Leonardo Guimarães.jpeg",
+      "Douglas Moura da Silva": "Douglas Moura.jpeg",
+      "Uiliam de Cassia Lemos": "uillian Lemos.jpeg",
+      "William Cardoso Ferreira": "Willian Cardoso.jpeg",
+      "Marcio da Silva Ribeiro": "Marcio Ribeiro.jpeg",
+      "Allan Rene Sells Corrêa": "Allan Correa.jpeg",
+      "Gustavo Pascoal Mereu": "logo.jpg",
+      "Euclides Jose de Matos Junior": "Euclides Matos.jpeg",
+      "Wesley Valadares de Oliveira Martins": "Wesley Martins.jpeg",
+      "Neymar Belem de Queiroz": "Neymar.jpeg",
+      "NILTON LUIS AMARAL": "Nilton Amaral.jpeg",
+      "William Ferreira Feitoza": "Willian Feitosa.jpeg",
+      "Rafael Wagner de Lima": "Rafael Wagner.jpeg",
+      "Jose Inacio da Silva Junior": "JOsé Inacio.jpeg",
+      "Alexandre Francisco da Silva": "Alexandre Francisco.jpeg",
+      "Ronald Santa Rosa Costa": "Ronald Costa.jpeg",
+      "Kaled Walid El Kadri": "Kaled Walid.jpeg",
+      "Jean Conceicao Santos": "Jean Conceição.jpeg",
+      "Bruno Rodrigues Oliveira": "Bruno Rodrigues.jpeg",
+      "Giovani Oliveira Antunes": "Giovane Oliveira.jpeg",
+      "Leandro de Oliveira": "Leandro de Oliveira.jpeg",
+      "Daniel Candido da Silva": "Daniel Candido.jpeg",
+      "Aparecido Alessandro da Silva": "Aparecido Alessandro.jpeg",
+      "Sanrley de Souza Oliveira": "Sanrley de Souza.jpeg",
+      "Davi Johannes Alves da Silva": "Davi Johannes.jpeg",
+      "Carlos Alberto Huber": "Carlos Alberto.jpeg"
+    };
+
+    // Mapeamento de cidades para siglas de estados
+    const estadoMap = {
+      "Marica": "RJ",
+      "Sao Paulo": "SP",
+      "Santa Rita do Sapucai": "MG",
+      "Curitiba": "PR",
+      "Itapevi": "SP",
+      "Sumare": "SP",
+      "Blumenau": "SC",
+      "Pouso Alegre": "MG",
+      "Varzea Grande": "MT",
+      "Vespasiano": "MG",
+      "Manaus": "AM",
+      "Canoas": "RS",
+      "Ribeirao Preto": "SP",
+      "Gloria do Goita": "PE",
+      "Recife": "PE",
+      "Belem": "PA",
+      "Campo Grande": "MS",
+      "Rio de Janeiro": "RJ",
+      "Ferraz de Vasconcelos": "SP",
+      "Belo Horizonte": "MG",
+      "Rolandia": "PR"
+    };
+
+    function criarIconeRedondo(imagePath, size) {
+      const iconSize = size || 46;
+      const html = `<div class="marcador-redondo" style="width: ${iconSize}px; height: ${iconSize}px;"><img src="${imagePath}" alt="Técnico" onerror="this.style.display='none'"></div>`;
+
+      return L.divIcon({
+        html: html,
+        iconSize: [iconSize, iconSize],
+        iconAnchor: [iconSize / 2, iconSize / 2],
+        popupAnchor: [0, -iconSize / 2],
+        className: 'custom-marker'
+      });
+    }
+
+    function criarIconeCartao(size, label) {
+      const iconSize = size || 46;
+      const labelHtml = label ? `<div class="card-label">${label}</div>` : '';
+      const html = `<div class="marcador-cartao" style="width: ${iconSize}px; height: ${iconSize}px;"><div class="card-icon">🧑‍🔧</div>${labelHtml}</div>`;
+
+      return L.divIcon({
+        html: html,
+        iconSize: [iconSize, iconSize + 30],
+        iconAnchor: [iconSize / 2, iconSize / 2],
+        popupAnchor: [0, -iconSize / 2],
+        className: 'custom-marker'
+      });
+    }
+
+    const empresas = [{"name": "Leonardo Guimaraes Oliveira", "city": "Marica", "phone": "(35) 999147856", "code": "081897", "lat": -22.9380077, "lng": -42.9453336}, {"name": "Douglas Moura da Silva", "city": "Sao Paulo", "phone": "(35) 984168041", "code": "081899", "lat": -23.5526669, "lng": -46.45016709999999}, {"name": "Uiliam de Cassia Lemos", "city": "Santa Rita do Sapucai", "phone": "(35) 997148762", "code": "082179", "lat": -22.2434052, "lng": -45.718205}, {"name": "Marcio da Silva Ribeiro", "city": "Itapevi", "phone": "(35) 997204745", "code": "087751", "lat": -23.5613298, "lng": -46.685356}, {"name": "Allan Rene Sells Corrêa", "city": "Sumare", "phone": "(35) 999777518", "code": "097014", "lat": -22.8361585, "lng": -47.2631124}, {"name": "Euclides Jose de Matos Junior", "city": "Varzea Grande", "phone": "(35) 997094187", "code": "112748", "lat": -15.6505125, "lng": -56.1354693}, {"name": "Wesley Valadares de Oliveira Martins", "city": "Vespasiano", "phone": "(35) 984280854", "code": "112956", "lat": -19.6903459, "lng": -43.9235782}, {"name": "Neymar Belem de Queiroz", "city": "Manaus", "phone": "(35) 998034255", "code": "115869", "lat": -3.1146009, "lng": -60.0368187}, {"name": "NILTON LUIS AMARAL", "city": "Canoas", "phone": "(35) 998763753", "code": "130572", "lat": -29.9551722, "lng": -51.1629802}, {"name": "William Ferreira Feitoza", "city": "Sao Paulo", "phone": "(35) 998714186", "code": "131556", "lat": -23.8575057, "lng": -46.7077072}, {"name": "Rafael Wagner de Lima", "city": "Ribeirao Preto", "phone": "(35) 998724845", "code": "139634", "lat": -21.1814991, "lng": -47.73841059999999}, {"name": "Jose Inacio da Silva Junior", "city": "Gloria do Goita", "phone": "(35) 998722549", "code": "139638", "lat": -8.000384, "lng": -35.2995933}, {"name": "Ronald Santa Rosa Costa", "city": "Belem", "phone": "(35) 97716192", "code": "144565", "lat": -1.470028, "lng": -48.49315499999999}, {"name": "Kaled Walid El Kadri", "city": "Sao Paulo", "phone": "(35) 999183230", "code": "147503", "lat": -23.6713613, "lng": -46.656285}, {"name": "Giovani Oliveira Antunes", "city": "Rolandia", "phone": "(35) 998429344", "code": "154498", "lat": -23.3272538, "lng": -51.3837596}, {"name": "Daniel Candido da Silva", "city": "Rio de Janeiro", "phone": "(35) 998061063", "code": "154778", "lat": -22.9908137, "lng": -43.2516768}, {"name": "Aparecido Alessandro da Silva", "city": "Ferraz de Vasconcelos", "phone": "(35) 998209621", "code": "155094", "lat": -23.5358091, "lng": -46.379107}, {"name": "Sanrley de Souza Oliveira", "city": "Belo Horizonte", "phone": "(35) 998208447", "code": "155098", "lat": -19.8509015, "lng": -43.9094337}, {"name": "Davi Johannes Alves da Silva", "city": "Sumare", "phone": "(35) 997740576", "code": "156644", "lat": -22.8159058, "lng": -47.2941295}, {"name": "Carlos Alberto Huber", "city": "Sao Paulo", "phone": "(35) 997454769", "code": "156646", "lat": -23.6065072, "lng": -46.5252694}, {"name": "LEGASTEC ASSISTENCIA TECNICA", "city": "Maua", "state": "SP", "phone": "(11) 44754360", "code": "018270", "address": "Rua Mario Magini, 89", "zip": "09390220", "lat": -23.6584055, "lng": -46.4557616}, {"name": "REI TEC", "city": "SANTO ANDRE", "state": "SP", "phone": "(12) 39586461", "code": "007793", "address": "AVENIDA DOM PEDRO II,3132", "zip": "09080001", "lat": -23.6302081, "lng": -46.5469429}, {"name": "AGILE COMERCIO E SERVICOS DE REFRIGERACAO", "city": "Sao Paulo", "state": "SP", "phone": "(11) 23849748", "code": "023717", "address": "Rua Caramuru, 1525", "zip": "04138002", "lat": -23.6134326, "lng": -46.6307527}, {"name": "OLIVEIRA REFRIGERACAO SP", "city": "Taboao da Serra", "state": "SP", "phone": "(11) 966088081", "code": "110478", "address": "Rua Alfredo Schultz 143", "zip": "06780160", "lat": -23.6214132, "lng": -46.7927448}];
+
+    function limparCep(valor) {
+      return valor.replace(/\D/g, '');
+    }
+
+    function calcularDistancia(coord1, coord2) {
+      const toRad = degrees => degrees * Math.PI / 180;
+      const lat1 = toRad(coord1[0]);
+      const lon1 = toRad(coord1[1]);
+      const lat2 = toRad(coord2[0]);
+      const lon2 = toRad(coord2[1]);
+      const dLat = lat2 - lat1;
+      const dLon = lon2 - lon1;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const earthRadius = 6371;
+      return earthRadius * c;
+    }
+
+    function encontrarTecnicoMaisProximo(coordenadas) {
+      if (!coordenadas) return null;
+      let melhor = null;
+      let menorDist = Infinity;
+      empresas.forEach(e => {
+        const distancia = calcularDistancia(coordenadas, [e.lat, e.lng]);
+        if (distancia < menorDist) {
+          menorDist = distancia;
+          melhor = e;
+        }
+      });
+      return melhor;
+    }
+
+    let searchHighlightLayer = null;
+
+    function exibirResultadoCep(dados) {
+      const resultado = document.getElementById('searchResult');
+      if (dados && dados.tecnico) {
+        resultado.innerHTML = `
+          <div class="result-header">
+            <div class="icon">📍</div>
+            <div>
+              <strong>Endereço encontrado</strong>
+              <span>${dados.cep}: ${dados.endereco}</span>
+            </div>
+          </div>
+          <div class="technician-line">
+            <span class="tech-title">Técnico mais próximo</span>
+            <span class="tech-name">${dados.tecnico.name} — ${dados.tecnico.city}</span>
+            <div class="tech-details">
+              <span class="chip">Código ${dados.tecnico.code}</span>
+              <span class="chip">Tel. ${dados.tecnico.phone}</span>
+            </div>
+          </div>
+        `;
+        resultado.classList.add('active');
+      } else {
+        resultado.innerHTML = '';
+        resultado.classList.remove('active');
+      }
+    }
+
+    function limparResultadoCep() {
+      exibirResultadoCep('');
+    }
+
+    function mostrarSpinner() {
+      document.getElementById('globalSpinner').classList.add('active');
+    }
+
+    function esconderSpinner() {
+      document.getElementById('globalSpinner').classList.remove('active');
+    }
+
+    function limparDestaqueCep() {
+      if (searchHighlightLayer) {
+        map.removeLayer(searchHighlightLayer);
+        searchHighlightLayer = null;
+      }
+    }
+
+    function criarDestaqueCep(regiao, tecnico) {
+      limparDestaqueCep();
+      const group = L.layerGroup();
+
+      const circle = L.circle(regiao.center, {
+        radius: 14000,
+        color: '#ff4f4f',
+        weight: 3,
+        opacity: 0.9,
+        fillOpacity: 0.10,
+        dashArray: '8,8'
+      }).addTo(group);
+
+      const centerMarker = L.marker(regiao.center, {
+        icon: L.divIcon({
+          className: 'search-highlight-icon',
+          html: '<div class="search-highlight-dot"></div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        })
+      }).addTo(group);
+
+      const nearestTechMarker = L.marker([tecnico.lat, tecnico.lng], {
+        icon: L.divIcon({
+          className: 'nearest-tech-icon',
+          html: '<div>!</div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        })
+      }).addTo(group);
+
+      searchHighlightLayer = group.addTo(map);
+    }
+
+    function ajustarZoomAoBuscar(coordenadas, tecnico) {
+      if (!Array.isArray(coordenadas) || coordenadas.length !== 2) {
+        console.error('Coordenadas inválidas para zoom:', coordenadas);
+        return;
+      }
+      if (!tecnico || typeof tecnico.lat !== 'number' || typeof tecnico.lng !== 'number') {
+        console.error('Técnico inválido para zoom:', tecnico);
+        return;
+      }
+
+      const centro = L.latLng(coordenadas[0], coordenadas[1]);
+      const tecnicoPoint = L.latLng(tecnico.lat, tecnico.lng);
+      const bounds = L.latLngBounds([centro, tecnicoPoint]);
+      const distanciaMetros = centro.distanceTo(tecnicoPoint);
+      const zoomFallback = distanciaMetros < 25000 ? 12 : distanciaMetros < 100000 ? 10 : 8;
+
+      if (!bounds.isValid()) {
+        console.error('Bounds inválidos ao ajustar zoom:', bounds);
+        map.setView(centro, zoomFallback);
+        return;
+      }
+
+      const executeZoom = () => {
+        try {
+          if (mapReady) {
+            map.invalidateSize(false);
+          }
+          map.fitBounds(bounds.pad(0.35), { padding: [60, 60], maxZoom: 12 });
+          if (tecnico.marker) {
+            tecnico.marker.openPopup();
+          }
+        } catch (error) {
+          console.error('Falha no fitBounds, fallback para setView:', error);
+          map.setView(centro, zoomFallback);
+          if (tecnico.marker) {
+            tecnico.marker.openPopup();
+          }
+        }
+      };
+
+      if (!mapReady) {
+        map.whenReady(() => setTimeout(executeZoom, 50));
+      } else {
+        setTimeout(executeZoom, 50);
+      }
+    }
+
+    async function handleCepSearch() {
+      mostrarSpinner();
+      try {
+        const cepInput = document.getElementById('cepSearch').value;
+        console.log('CEP input:', cepInput);
+        const cepLimpo = limparCep(cepInput);
+        console.log('CEP limpo:', cepLimpo);
+        
+        if (cepLimpo.length !== 8) {
+          limparDestaqueCep();
+          limparResultadoCep();
+          return;
+        }
+
+        console.log('Buscando dados do CEP...');
+        const dadosCep = await buscarDadosCep(cepLimpo);
+        console.log('Dados CEP:', dadosCep);
+        
+        if (!dadosCep) {
+          limparDestaqueCep();
+          limparResultadoCep();
+          return;
+        }
+
+        console.log('Obtendo coordenadas...');
+        const coordenadas = await obterCoordenadasCep(cepLimpo, dadosCep);
+        console.log('Coordenadas:', coordenadas);
+        
+        if (!coordenadas) {
+          limparDestaqueCep();
+          limparResultadoCep();
+          return;
+        }
+
+        console.log('Encontrando técnico...');
+        const tecnico = encontrarTecnicoMaisProximo(coordenadas);
+        console.log('Técnico:', tecnico);
+        
+        if (!tecnico) {
+          limparDestaqueCep();
+          limparResultadoCep();
+          return;
+        }
+
+        const endereco = [dadosCep.logradouro, dadosCep.bairro, dadosCep.localidade, dadosCep.uf]
+          .filter(Boolean)
+          .join(' - ');
+
+        criarDestaqueCep({ center: coordenadas, label: `CEP ${formatarCep(cepLimpo)}` }, tecnico);
+        exibirResultadoCep({
+          cep: formatarCep(cepLimpo),
+          endereco,
+          tecnico
+        });
+
+        ajustarZoomAoBuscar(coordenadas, tecnico);
+      } catch (error) {
+        console.error('Erro no handleCepSearch:', error);
+        limparDestaqueCep();
+        limparResultadoCep();
+      } finally {
+        esconderSpinner();
+      }
+    }
+
+    document.getElementById('searchCepButton').addEventListener('click', handleCepSearch);
+    document.getElementById('clearCepButton').addEventListener('click', () => {
+      document.getElementById('cepSearch').value = '';
+      limparResultadoCep();
+      limparDestaqueCep();
+      if (mapReady) {
+        map.invalidateSize(false);
+      }
+      map.setView(initialMapCenter, initialMapZoom);
+    });
+    document.getElementById('cepSearch').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        handleCepSearch();
+      }
+    });
+
+    empresas.forEach((e) => {
+      const nomeImagem = imagemMap[e.name];
+      const imagePath = nomeImagem ? "./" + nomeImagem : null;
+      const estado = e.state || e.uf || estadoMap[e.city] || "BR";
+      
+      const initialIcon = nomeImagem ? criarIconeRedondo(imagePath, 46) : criarIconeCartao(46, e.name);
+      const m = L.marker([e.lat, e.lng], { icon: initialIcon }).addTo(map);
+      e.marker = m;
+      if (imagePath) {
+        markers.push({ marker: m, imagePath: imagePath });
+      }
+
+      // Criar popup com apenas dados textuais
+      const popupContent = `
+        <div class="popup-dados-tecnico">
+          <div class="titulo">${e.city} - ${estado}</div>
+          <div><strong>Nome:</strong> ${e.name}</div>
+          <div><strong>Endereço:</strong> ${e.address || 'N/A'}</div>
+          <div><strong>Código:</strong> ${e.code}</div>
+          <div><strong>Telefone:</strong> ${e.phone}</div>
+        </div>
+      `;
+
+      m.bindPopup(popupContent, {
+        closeButton: true,
+        className: 'custom-popup',
+        maxWidth: 250
+      });
+
+      m.on('click', function() {
+        m.openPopup();
+      });
+    });
+  </script>
+</body>
+</html>
